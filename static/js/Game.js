@@ -10,7 +10,7 @@ var col_count = 8;
 var piece_width = 46;
 
 var chess_is_init = true;  //棋盘是不是没有走动过，如果没走动，他人上线就不用重画
-
+//http://jsfiddle.net/c5YVX/
 /**
  * 画8x8的棋盘
  * @return {bool} 
@@ -111,9 +111,9 @@ function getCurPosition(e) {
  * @return {bool}   
  */
 function gameClickHandler(e){
-	// if(is_waiting){
-        // return false;
-    // }
+	if(is_waiting){
+        return false;
+    }
 	var pos = getCurPosition(e);
 	var rowcol = getGridRowCol(pos);
     var row = rowcol[0];
@@ -121,18 +121,205 @@ function gameClickHandler(e){
     if(Reversi.Pieces[row-1][col-1] > 0){
     	return false;
     }
-    var reversi = new Reversi(row, col, 1);
+    var reversi = new Reversi(row, col, my_piece_color);
     reversi.findReversiPieces();
     if(reversi.can_put_piece){
-    	drawPiece(row, col, 1);
+    	drawPiece(row, col, my_piece_color);
     	reversi.doReversePieces();
+    	gamemove(row, col);
     }
 };
+
+//哪一方该下棋的标记
+function initStartSign(){
+    $('#piece_sign_top').removeClass('gamemove-status');
+    $('#piece_sign_bottom').removeClass('gamemove-status');
+    var piece_signs = $('#piece_sign_top');
+    if(my_piece_color == 1){
+        piece_signs = $('#piece_sign_bottom');   
+    }
+    piece_signs.addClass('gamemove-status');
+}
+/**
+ * 发送聊天
+ * @return {} 
+ */
+function sendchat(){
+    var content = $('#chat-input').val();
+    $('#chat-input').val('');            
+    if (!content || room_status != 1) return;
+    $('#chat-div ul').append('<li class="mychat-li"></li>');
+    $('#chat-div ul li:last-child').text(content);
+    $('#chat-div ul').scrollTop($('#chat-div ul')[0].scrollHeight);
+    gamesocket.send(JSON.stringify({
+        room: room_name,
+        content: content,
+        'type':'on_chat',
+    }));
+}
+/**
+ * 下棋动作
+ * @param  {array} from 
+ * @param  {array} to
+ * @return {bool}     
+ */
+function gamemove(row, col){
+    chess_is_init = false;
+    var data = JSON.stringify({
+        room: room_name,
+        row: row,
+        col: col,
+        'type':'on_gamemove',
+    });
+    gamesocket.send(data);
+    is_waiting = true;
+    d3.select('#chess-grid svg').style('cursor','default')
+    $('#piece_sign_bottom').removeClass('gamemove-status');
+    $('#piece_sign_top').addClass('gamemove-status');
+}
+/**
+ * 对方离线
+ * @param  {string} msg 
+ * @return {bool}     
+ */
+function on_offline(msg){
+    is_waiting = true;
+    room_status = 0;
+    $('#status-span').text('对方离线');
+    $('#game-canvas').css('cursor', 'default');
+    $('#piece_sign_top').removeClass('gamemove-status');
+    $('#piece_sign_bottom').removeClass('gamemove-status');
+    $('#alert-title').text('对方离线');
+    $('#alert-model-dom').data('id', 0).modal('show');
+}
+/**
+ * 对方走一步棋
+ * @param  {string} msg 
+ * @return {bool}     
+ */
+function on_gamemove(msg){
+    chess_is_init = false;
+    row = parseInt(msg.row);
+    col = parseInt(msg.col);
+
+    var reversi = new Reversi(row, col, his_piece_color);
+    reversi.findReversiPieces();
+    if(reversi.can_put_piece){
+    	drawPiece(row, col, his_piece_color);
+    	reversi.doReversePieces();
+    }
+
+    d3.select('#chess-grid svg').style('cursor','pointer');
+    $('#piece_sign_top').removeClass('gamemove-status');
+    $('#piece_sign_bottom').addClass('gamemove-status');
+    is_waiting = false;
+}
+/**
+ * 开始游戏
+ * @param  {string} msg 
+ * @return {bool}     
+ */
+function on_gamestart(msg){
+    is_waiting = (my_piece_color==2) ? true : false;
+    room_status = 1;
+    $('#status-span').text('对方上线，游戏开始');
+
+    if(!chess_is_init){
+        d3.selectAll('#chess-grid svg *').remove();
+        drawChessGrid();  //重画棋盘
+    }
+
+    if(my_piece_color == 1){  //黑先白后
+        $('#chess-grid svg').css('cursor', 'pointer');
+    }else{
+        $('#chess-grid svg').css('cursor', 'default');
+    }
+    initStartSign();
+}
+/**
+ * 游戏结束
+ * @param  {string} msg 
+ * @return {bool}     
+ */
+function on_gameover(msg){
+    is_waiting = true;
+    room_status = 2;
+    $('#status-span').text('游戏结束');
+    $('#piece_sign_top').removeClass('gamemove-status');
+    $('#piece_sign_bottom').removeClass('gamemove-status');
+    $('#chess-grid svg').css('cursor', 'default'); 
+
+    $('#alert-title').text('游戏结束');
+    $('#alert-model-dom').data('id', 0).modal('show');
+}
+/**
+ * 聊天
+ * @param  {string} msg 
+ * @return {bool}     
+ */
+function on_chat(msg){
+    $('#chat-div ul').append('<li class="hischat-li"></li>');
+    $('#chat-div ul li:last-child').text(msg.content);
+    $('#chat-div ul').scrollTop($('#chat-div ul')[0].scrollHeight);
+}
+
+window.onbeforeunload = function () {
+    gamesocket.close();
+    // event.returnValue = "You will lose any unsaved content";
+}
 
 $(function() {
 
 	drawChessGrid();
 
 	chess_svg[0][0].addEventListener("click", gameClickHandler, false);
+
+	if(room_status != 0){
+        initStartSign();
+    }
+    if(is_waiting ){
+        $('#chess-grid svg').css('cursor', 'default');
+    }
+
+    var WebSocket = window.WebSocket || window.MozWebSocket;
+        if (WebSocket) {
+            try {
+                gamesocket = new WebSocket(wsurl);
+            } catch (e) {
+                alert(e)
+            }
+    }
+
+    if (gamesocket) {
+        gamesocket.onopen = function(){  
+            //gamesocket.send(JSON.stringify({name:"yes"}));
+        }  
+        gamesocket.onmessage = function(event) {
+            // console.log(event.data);
+            var msg = JSON.parse(event.data)
+            switch(msg.type){
+                case 'online':
+                    on_online(msg);
+                    break;
+                case 'offline':
+                    on_offline(msg);
+                    break;
+                case 'on_gamestart':
+                    on_gamestart(msg);
+                    break;
+                case 'on_gamemove':
+                    on_gamemove(msg);
+                    break;
+                case 'on_gameover':
+                    on_gameover(msg);
+                    break;
+                case 'on_chat':
+                    on_chat(msg);
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
 
 });

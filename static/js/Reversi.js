@@ -44,8 +44,8 @@ var Reversi = function (row, col, color) {
 			return false;
 		}
 		var my_piece_img = status_imgs[this.color-1];
-		for (var i=0; i<this.reversi_pieces.length; i++){
-			var pos = this.reversi_pieces[i];
+		for (var j=0; j<this.reversi_pieces.length; j++){
+			var pos = this.reversi_pieces[j];
 			var row = pos[0]+1;
 			var col = pos[1]+1;
 			var id = 'piece-'+row+'-'+col;
@@ -58,9 +58,11 @@ var Reversi = function (row, col, color) {
 				.attr('width',0)
 				.attr('height',0)
 				.attrTween('x', function(d,i,a){
+						var startx = parseInt(a) + piece_width/2;
 						return d3.interpolate(a, startx);
 					})
 				.attrTween('y', function(d,i,a){
+						var starty = parseInt(a) + piece_width/2;
 						return d3.interpolate(a, starty);
 					})
 				.each("end",function() { 
@@ -70,9 +72,11 @@ var Reversi = function (row, col, color) {
 						.attr('width',piece_width)
 						.attr('height',piece_width)
 						.attrTween('x', function(d,i,a){
+								var endx = parseInt(a) - piece_width/2;
 								return d3.interpolate(a, endx);
 							})
 						.attrTween('y', function(d,i,a){
+								var endy = parseInt(a) - piece_width/2;
 								return d3.interpolate(a, endy);
 							})
 				});
