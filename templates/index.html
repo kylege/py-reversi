@@ -10,12 +10,12 @@
 
 {% block container-fluid %}
 
-    <div class="container-fluid">
+<div class="container-fluid">
     	<div class="row-fluid">
     		<div class="span9" id="game-div">
     			<div id="gamebar-div">
-    				<div id="piece_sign_top" class=""></div>
-    				<div id="piece_sign_bottom" class=""></div>
+    				<div id="piece_sign_top" class=""><img id="his_status_img" src="{{config.ConfigStaticPath}}/img/help-browser-4.png" /><span id="his_piece_count">2</span></div>
+    				<div id="piece_sign_bottom" class=""><img id="my_status_img" src="{{config.ConfigStaticPath}}/img/help-browser-4.png" /><span id="my_piece_count">2</span></div>
     			</div>
     			<div id="chess-grid"></div>
     		</div>

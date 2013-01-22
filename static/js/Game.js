@@ -10,7 +10,9 @@ var col_count = 8;
 var piece_width = 46;
 
 var chess_is_init = true;  //棋盘是不是没有走动过，如果没走动，他人上线就不用重画
-//http://jsfiddle.net/c5YVX/
+//不同颜色棋子数量
+var pieces_count_his = 2;
+var pieces_count_my = 2;
 /**
  * 画8x8的棋盘
  * @return {bool} 
@@ -172,10 +174,28 @@ function gamemove(row, col){
         'type':'on_gamemove',
     });
     gamesocket.send(data);
-    is_waiting = true;
-    d3.select('#chess-grid svg').style('cursor','default')
-    $('#piece_sign_bottom').removeClass('gamemove-status');
-    $('#piece_sign_top').addClass('gamemove-status');
+
+    var he_can_put = false;
+    for(var i=1; i<=row_count; i++){
+        for(var j=1; j<=col_count; j++){
+            if(Reversi.Pieces[i-1][j-1] == 0){
+                var reversi = new Reversi(i, j, his_piece_color);
+                reversi.findReversiPieces();
+                if(reversi.can_put_piece){ 
+                    he_can_put = true;
+                    break;
+                }
+            }
+        }
+    }
+    if(he_can_put){  //如果对方可以下，则禁自己下，否则，自己继续下
+        is_waiting = true;
+        d3.select('#chess-grid svg').style('cursor','default')
+        $('#piece_sign_bottom').removeClass('gamemove-status');
+        $('#piece_sign_top').addClass('gamemove-status');
+    }
+
+    renderPiecesCount();
 }
 /**
  * 对方离线
@@ -209,10 +229,27 @@ function on_gamemove(msg){
     	reversi.doReversePieces();
     }
 
-    d3.select('#chess-grid svg').style('cursor','pointer');
-    $('#piece_sign_top').removeClass('gamemove-status');
-    $('#piece_sign_bottom').addClass('gamemove-status');
-    is_waiting = false;
+    var i_can_put = false;
+    for(var i=1; i<=row_count; i++){
+        for(var j=1; j<=col_count; j++){
+            if(Reversi.Pieces[i-1][j-1] == 0){
+                var reversi = new Reversi(i, j, my_piece_color);
+                reversi.findReversiPieces();
+                if(reversi.can_put_piece){ 
+                    i_can_put = true;
+                    break;
+                }
+            }
+        }
+    }
+    if(i_can_put){  //如果我可以下，则自己下
+        d3.select('#chess-grid svg').style('cursor','pointer');
+        $('#piece_sign_top').removeClass('gamemove-status');
+        $('#piece_sign_bottom').addClass('gamemove-status');
+        is_waiting = false;
+    }
+
+    renderPiecesCount();
 }
 /**
  * 开始游戏
@@ -228,6 +265,9 @@ function on_gamestart(msg){
         d3.selectAll('#chess-grid svg *').remove();
         drawChessGrid();  //重画棋盘
     }
+
+    $('#his_status_img').attr('src', status_imgs[his_piece_color-1]);
+    $('#my_status_img').attr('src', status_imgs[my_piece_color-1]);
 
     if(my_piece_color == 1){  //黑先白后
         $('#chess-grid svg').css('cursor', 'pointer');
@@ -261,6 +301,54 @@ function on_chat(msg){
     $('#chat-div ul').append('<li class="hischat-li"></li>');
     $('#chat-div ul li:last-child').text(msg.content);
     $('#chat-div ul').scrollTop($('#chat-div ul')[0].scrollHeight);
+}
+/**
+ * 计算各颜色棋子数量，并显示出来
+ * @return {bool} 
+ */
+function renderPiecesCount(){
+    var count_black = 0;
+    var count_white = 0;
+    for (var i = row_count - 1; i >= 0; i--) {
+        for (var j = col_count - 1; j >= 0; j--) {
+            if (Reversi.Pieces[i][j] == 1){
+                count_black++;
+            }else if(Reversi.Pieces[i][j] == 2){
+                count_white++;
+            }
+        };
+    };
+    var counts = [ count_black, count_white];
+    var his_piece_count = counts[his_piece_color-1];
+    var my_piece_count = counts[my_piece_color-1];
+
+    var duration = 1000;
+
+    d3.select('#his_piece_count')
+      .text(pieces_count_his)
+      .transition()
+      .duration(duration)
+      .ease('linear')
+      .tween("text", function() {
+        var i = d3.interpolate(this.textContent, his_piece_count);
+        return function(t) {
+          this.textContent = Math.round(i(t));
+        };
+    });
+
+    d3.select('#my_piece_count')
+      .text(pieces_count_my)
+      .transition()
+      .duration(duration)
+      .ease('linear')
+      .tween("text", function() {
+        var i = d3.interpolate(this.textContent, my_piece_count);
+        return function(t) {
+          this.textContent = Math.round(i(t));
+        };
+    });
+    pieces_count_his = his_piece_count;
+    pieces_count_my = my_piece_count;
 }
 
 window.onbeforeunload = function () {

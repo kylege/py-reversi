@@ -31,17 +31,22 @@ body {
 }
 #piece_sign_top{
 	margin-top: 70px;
+	padding-left: 60px;
+	width: 70px;
 	margin-left: 30px;
 }
 #piece_sign_bottom {
 	position: relative;
-	top: 273px;
+	top: 242px;
+	padding-left: 60px;
+	width: 70px;
 	margin-left: 30px;
 }
 .gamemove-status {
 	background-repeat: no-repeat;
 	width: 50px;
 	height: 50px;
+
 }
 .rooms-title{
     margin-left: 50px;
@@ -80,7 +85,6 @@ body {
 .shape-render{
     shape-rendering:crispEdges
 }
-
 #chess-grid{
 	margin: 2px;
 	padding: 2px;
@@ -92,8 +96,13 @@ body {
 #chess-grid svg {
 	cursor: pointer;
 }
-.piece-text {
-	text-anchor: middle;
-	font-size: 24px;
-	font-family: '微软雅黑','黑体',arial;
+#his_piece_count, #my_piece_count {
+	font-size: 28px;
+	font-style: bold;
+	padding: 2px 0 0 2px;
+	position: relative;;
+	top: 5px;
+	left: 1px;
+}
+#his_piece_count{
 }
