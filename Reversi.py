@@ -73,7 +73,6 @@ class ChessGame():
                         return False
         if not has_empty:            
             return True 
-        print str(his_color)+ '对方已经没法走棋'
         #对方已经没法走棋
         my_color = 2 if his_color == 1 else 1
         for i in range(ChessGame.row_count):
@@ -81,7 +80,6 @@ class ChessGame():
                 if self.PiecesMap[i][j] == 0:
                     if self._findReversiPieces(i+1, j+1, my_color):  #自己还能走，那么自己继续走棋
                         self.last_move_color = his_color
-                        print '我能走棋,last_move_color='+str(self.last_move_color)
                         return False
         return True
 
