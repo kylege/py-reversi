@@ -15,13 +15,13 @@ from Config import Config
 from datetime import timedelta
 import logging
 
-from tornado.options import define, options  
+from tornado.options import define, options
 from Reversi import ChessGame, GameRoom
 
-define("port", default=8888, help="Run server on a specific port", type=int)  
+define("port", default=8888, help="Run server on a specific port", type=int)
 
-import sys 
-reload(sys) 
+import sys
+reload(sys)
 sys.setdefaultencoding('utf8')
 
 '''
@@ -57,7 +57,7 @@ class EnterRoomHandler(web.RequestHandler):
                     )
             else:
                 logging.info( 'room user_piece_ids is empty.')
-        
+
 
 '''
     用websocket来与前端通信
@@ -99,7 +99,7 @@ class GameSocketHandler(tornado.websocket.WebSocketHandler):
         return
 
     def on_close(self):
-        try:   
+        try:
             GameSocketHandler.all_rooms[self.room_name].user_piece_ids.remove(self.user_piece)
             if isLog: logging.info( 'User %d  has left the room: %s' % (self.user_piece, self.room_name) )
 
@@ -121,7 +121,7 @@ class GameSocketHandler(tornado.websocket.WebSocketHandler):
         except:
             logging.error( 'on_close Exception.' )
 
-        if self.mykey in GameSocketHandler.socket_handlers: 
+        if self.mykey in GameSocketHandler.socket_handlers:
             del GameSocketHandler.socket_handlers[self.mykey]
         self.chek_active.stop()
         return True
@@ -161,6 +161,8 @@ class GameSocketHandler(tornado.websocket.WebSocketHandler):
             if isLog: logging.info(u'棋子移动失败. '+ret.msg)
             return False
         else:
+            socket = GameSocketHandler.socket_handlers[self.hiskey]
+            socket.write_message({'type':'on_gamemove', 'row':row, 'col':col})
             if room.chess_game.checkGameOver(self.his_piece):  #游戏结束
                 if isLog:  logging.info( "Room: %s gameover." % self.room_name.encode('UTF-8') )
                 socket = GameSocketHandler.socket_handlers[self.hiskey]
@@ -168,10 +170,7 @@ class GameSocketHandler(tornado.websocket.WebSocketHandler):
                 self.write_message({'type':'on_gameover'})
                 self.close()
                 socket.close()
-            else:
-                socket = GameSocketHandler.socket_handlers[self.hiskey]
-                socket.write_message({'type':'on_gamemove', 'row':row, 'col':col})
-                    
+
         return True
 
     def allow_draft76(self):
