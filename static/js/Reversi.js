@@ -43,7 +43,7 @@ var Reversi = function (row, col, color) {
 		if(this.reversi_pieces.length <= 0){
 			return false;
 		}
-		var my_piece_img = status_imgs[this.color-1];
+		var my_piece_img = piece_imgs[this.color-1];
 		for (var j=0; j<this.reversi_pieces.length; j++){
 			var pos = this.reversi_pieces[j];
 			var row = pos[0]+1;

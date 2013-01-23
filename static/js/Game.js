@@ -60,7 +60,7 @@ function drawPiece(row, col, color){
 	col = col-1;
 	var dx = out_width + col*cell_width + (cell_width-piece_width)/2;
 	var dy = out_width + row*cell_width + (cell_width-piece_width)/2;
-	var imgurl = status_imgs[color-1];
+	var imgurl = piece_imgs[color-1];
 	chess_svg.append('svg:image')
     	.attr('width', piece_width)
     	.attr('height', piece_width)
