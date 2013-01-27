@@ -207,7 +207,7 @@ urls = [
         (r"/room-(.{1,200})", EnterRoomHandler),
         (r"/rooms", RoomListHandler),
         (r"/", RoomListHandler),
-        (r"/gamesocket", GameSocketHandler),
+        (r"/gs", GameSocketHandler),
         ]
 
 settings = dict(
